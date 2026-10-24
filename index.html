@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NetLab — Reliable Data Transfer Simulator</title>
+<style>
+:root{--ink:#17233b;--muted:#64748b;--line:#dbe4f0;--bg:#f4f7fb;--blue:#2563eb;--cyan:#0891b2;--orange:#ea580c;--red:#dc2626;--green:#15803d;--purple:#7c3aed}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;color:var(--ink)}
+header{background:#fff;border-bottom:1px solid var(--line);padding:20px max(20px,calc((100vw - 1180px)/2));display:flex;align-items:center;justify-content:space-between;gap:15px}
+.brand{display:flex;align-items:center;gap:12px}.logo{width:44px;height:44px;border-radius:13px;background:#e0eaff;color:var(--blue);display:grid;place-items:center;font-size:23px}
+h1{font-size:21px;margin:0}header p{margin:4px 0 0;color:var(--muted);font-size:13px}.pill{border:1px solid #c7d7f5;background:#eff6ff;color:#1d4ed8;border-radius:99px;padding:7px 12px;font-size:12px;font-weight:700;white-space:nowrap}
+main{max-width:1180px;margin:25px auto;padding:0 18px 40px}.intro{margin-bottom:20px}.intro h2{font-size:27px;margin:0 0 7px;letter-spacing:-.6px}.intro p{color:var(--muted);margin:0;line-height:1.5}
+.layout{display:grid;grid-template-columns:minmax(270px,310px) minmax(0,1fr);gap:18px;align-items:start;min-width:0}.panel{background:white;border:1px solid var(--line);border-radius:17px;padding:19px;box-shadow:0 5px 18px #1e3a5f08}.panel h3{margin:0 0 15px;font-size:15px}
+label{display:block;font-size:12px;color:#475569;font-weight:700;margin:15px 0 7px}select,input[type=number]{width:100%;padding:10px 11px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;color:var(--ink);font:inherit}
+input[type=range]{width:100%;accent-color:var(--blue)}.range-row{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.check{display:flex;gap:9px;align-items:center;font-size:13px;margin-top:13px;color:#334155}.check input{accent-color:var(--blue)}
+.buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}.btn{border:0;border-radius:9px;padding:10px 13px;font-weight:750;cursor:pointer;font-size:13px}.primary{background:var(--blue);color:white}.secondary{background:#eaf0f8;color:#334155}.outline{background:white;border:1px solid var(--line);color:#334155}.btn:disabled{opacity:.4;cursor:not-allowed}
+.right{display:grid;gap:17px;min-width:0}.right>*{min-width:0}.panel,.diagram,.channel{min-width:0}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{background:#fff;border:1px solid var(--line);border-radius:13px;padding:14px}.metric span{font-size:11px;color:var(--muted);display:block;margin-bottom:8px}.metric strong{font-size:23px;letter-spacing:-.5px}.metric small{display:block;color:var(--muted);font-size:10px;margin-top:4px}
+.diagram{padding:19px}.diagram-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.diagram-head h3{margin:0}.status{font-size:11px;font-weight:800;border-radius:99px;padding:6px 9px;background:#f1f5f9;color:#475569}
+.lanes{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px}.node{border:1px solid var(--line);border-radius:13px;padding:13px;text-align:center;background:#f8fafc}.node .emoji{font-size:25px}.node strong{display:block;font-size:13px;margin-top:5px}.node small{color:var(--muted);font-size:11px}
+.channel{position:relative;min-height:185px;margin:14px 0 4px;border-radius:12px;background:linear-gradient(180deg,#f8fbff,#f1f6fc);border:1px dashed #cbd8e8;overflow:hidden;padding:10px}
+.channel-label{text-align:center;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#94a3b8;font-weight:800}
+.packet-grid{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;align-content:center;min-height:112px;padding:8px 0}
+.packet{border:1px solid #bfdbfe;background:#dbeafe;color:#1d4ed8;padding:9px 10px;border-radius:9px;font-size:11px;font-weight:800;min-width:66px;text-align:center;transition:.2s}
+.packet.acked{background:#dcfce7;border-color:#86efac;color:#166534}.packet.lost{background:#fee2e2;border-color:#fca5a5;color:#b91c1c;text-decoration:line-through}.packet.wait{background:#ffedd5;border-color:#fdba74;color:#9a3412}.packet.buffer{background:#f3e8ff;border-color:#d8b4fe;color:#6b21a8}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:10px;color:var(--muted);margin-top:12px}.dot{display:inline-block;width:8px;height:8px;border-radius:3px;margin-right:5px}
+.event{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-bottom:1px solid #edf1f6;font-size:12px;line-height:1.45}.event:last-child{border-bottom:0}.event .time{font-size:10px;color:#94a3b8;min-width:45px;padding-top:2px}.event b{display:block;font-size:12px;margin-bottom:2px}.event p{margin:0;color:var(--muted)}.event-icon{width:27px;height:27px;display:grid;place-items:center;border-radius:8px;background:#eff6ff}
+.bottom{display:grid;grid-template-columns:1fr 1fr;gap:17px}.explain{font-size:13px;line-height:1.65;color:#475569}.explain strong{color:var(--ink)}.callout{background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:11px 12px;font-size:12px;line-height:1.5;color:#075985;margin-top:12px}
+.quiz-q{font-size:13px;line-height:1.5;margin-bottom:12px}.quiz-options{display:grid;gap:7px}.quiz-option{border:1px solid var(--line);background:white;text-align:left;border-radius:9px;padding:10px;font-size:12px;cursor:pointer;color:var(--ink)}.quiz-option:hover{border-color:#93c5fd;background:#f8fbff}.feedback{font-size:12px;margin-top:10px;line-height:1.5}
+footer{text-align:center;color:#94a3b8;font-size:11px;margin-top:24px}
+@media(max-width:1000px){.layout{grid-template-columns:minmax(0,1fr)}.right{width:100%}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.bottom{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){main{padding-left:12px;padding-right:12px}.panel{padding:14px}.bottom{grid-template-columns:minmax(0,1fr)}.lanes{gap:8px}.metric{padding:11px}.metric strong{font-size:20px}.intro h2{font-size:23px}header{padding:15px 12px}.pill{display:none}}
+</style>
+</head>
+<body>
+<header><div class="brand"><div class="logo">↔</div><div><h1>NetLab</h1><p>Reliable Data Transfer • Interactive learning lab</p></div></div><div class="pill">COMPUTER NETWORKS · SEM V</div></header>
+<main>
+<section class="intro"><h2>See how reliable delivery works.</h2><p>Experiment with ARQ protocols, introduce packet loss, and observe acknowledgements and retransmissions in real time.</p></section>
+<div class="layout">
+<aside class="panel">
+<h3>⚙ Simulation controls</h3>
+<label for="protocol">Protocol</label><select id="protocol"><option value="sw">Stop-and-Wait ARQ</option><option value="gbn">Go-Back-N ARQ</option><option value="sr">Selective Repeat ARQ</option></select>
+<label for="count">Number of packets</label><input id="count" type="number" min="3" max="12" value="8"/>
+<label for="window">Sender window size <span id="windowValue">4</span></label><input id="window" type="range" min="1" max="6" value="4"/>
+<label for="loss">Packet loss probability <span id="lossValue">20%</span></label><input id="loss" type="range" min="0" max="60" step="10" value="20"/>
+<label for="ackloss">ACK loss probability <span id="ackLossValue">10%</span></label><input id="ackloss" type="range" min="0" max="50" step="10" value="10"/>
+<label for="delay">Timeout (simulation ticks)</label><input id="delay" type="number" min="1" max="5" value="2"/>
+<div class="check"><input type="checkbox" id="showAck" checked/><span>Show ACK packets in event log</span></div>
+<div class="buttons"><button class="btn primary" id="step">▶ Next step</button><button class="btn secondary" id="auto">Run simulation</button><button class="btn outline" id="reset">↺ Reset</button></div>
+<p style="font-size:11px;color:#94a3b8;line-height:1.5;margin:14px 0 0">Tip: set packet loss to 0% first. Then increase it and compare the protocols.</p>
+</aside>
+<section class="right">
+<div class="metrics">
+<div class="metric"><span>Packets delivered</span><strong id="delivered">0/8</strong><small>Received successfully</small></div>
+<div class="metric"><span>Packets transmitted</span><strong id="sent">0</strong><small>Includes retransmissions</small></div>
+<div class="metric"><span>Retransmissions</span><strong id="retrans">0</strong><small>Extra transmissions</small></div>
+<div class="metric"><span>Delivery efficiency</span><strong id="eff">—</strong><small>Delivered ÷ transmissions</small></div>
+</div>
+<div class="panel diagram">
+<div class="diagram-head"><h3>📡 Sender ↔ Receiver</h3><span class="status" id="status">READY</span></div>
+<div class="lanes"><div class="node"><div class="emoji">💻</div><strong>Sender</strong><small id="senderSub">Waiting to send</small></div><div class="node"><div class="emoji">🖥️</div><strong>Receiver</strong><small id="receiverSub">No packets received</small></div></div>
+<div class="channel"><div class="channel-label">Network channel · packet flow</div><div class="packet-grid" id="packetGrid"><div class="packet">Ready</div></div></div>
+<div class="legend"><span><i class="dot" style="background:#93c5fd"></i>In transit</span><span><i class="dot" style="background:#86efac"></i>Acknowledged</span><span><i class="dot" style="background:#fdba74"></i>Waiting / retry</span><span><i class="dot" style="background:#fca5a5"></i>Lost</span><span><i class="dot" style="background:#d8b4fe"></i>Buffered out of order</span></div>
+</div>
+<div class="bottom">
+<div class="panel"><h3>🧠 What is happening?</h3><div id="explanation" class="explain">Choose a protocol and press <strong>Next step</strong> to start. The event log records packet delivery, ACKs, losses, timeouts and retransmissions.</div><div class="callout" id="concept">Key idea: reliability is achieved by combining sequence numbers, acknowledgements and retransmission.</div></div>
+<div class="panel"><h3>🧾 Event log</h3><div id="log"><div class="event"><span class="time">T+0</span><span class="event-icon">💡</span><div><b>Simulation ready</b><p>Press Next step to transmit packets.</p></div></div></div></div>
+<div class="panel"><h3>📘 Protocol quick guide</h3><div id="guide" class="explain"></div></div>
+<div class="panel"><h3>🎯 Check your understanding</h3><div class="quiz-q" id="quizQ">Which protocol retransmits only the missing or unacknowledged packet?</div><div class="quiz-options" id="quizOptions"></div><div id="quizFeedback" class="feedback"></div></div>
+</div>
+</section>
+</div>
+<footer>NetLab is an educational simulation. It models ARQ behaviour; it does not send real network traffic.</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let S, timer=null;
+const guides={
+ sw:{name:"Stop-and-Wait ARQ",text:"Only one unacknowledged packet can be in flight. The sender waits for its ACK before sending the next packet. A timeout triggers retransmission.",concept:"Trade-off: simple to understand, but the sender spends time waiting, especially on long-delay links."},
+ gbn:{name:"Go-Back-N ARQ",text:"The sender can transmit a window of packets. The receiver accepts packets in order. When a packet is missing, later packets may be discarded and the sender goes back to retransmit from the missing sequence number.",concept:"Trade-off: better use of the link than Stop-and-Wait, but one loss can cause several packets to be retransmitted."},
+ sr:{name:"Selective Repeat ARQ",text:"The sender can have several packets outstanding. The receiver can buffer packets that arrive out of order. The sender retransmits only packets that remain unacknowledged after a timeout.",concept:"Trade-off: efficient retransmission, but the sender and receiver need more buffering and tracking."}
+};
+function protocol(){return $("protocol").value}
+function addLog(icon,title,desc){if(!$("showAck").checked&&title.startsWith("ACK"))return;S.log.unshift({t:S.tick,icon,title,desc});S.log=S.log.slice(0,9)}
+function init(){
+ if(timer){clearInterval(timer);timer=null} $("auto").textContent="Run simulation";
+ let n=Math.max(3,Math.min(12,parseInt($("count").value)||8));$("count").value=n;
+ S={n,tick:0,next:1,delivered:new Set(),acked:new Set(),buffered:new Set(),attempts:Array(n+1).fill(0),sent:0,retrans:0,log:[],done:false,flight:[],base:1,everLost:new Set()};
+ $("status").textContent="READY";$("explanation").innerHTML='Choose <strong>Next step</strong> to transmit packets and observe how the selected protocol responds.';addLog("💡","Simulation ready","Press Next step to begin.");render();
+}
+function sendPacket(i,retry=false){
+ S.attempts[i]++;S.sent++;if(retry)S.retrans++;
+ let pLoss=+$("loss").value/100, aLoss=+$("ackloss").value/100;
+ let lost=Math.random()<pLoss;let ackLost=false;
+ if(lost){S.everLost.add(i);addLog("❌",`Packet ${i} lost`,`The network dropped packet ${i}. The sender will need to recover using a timeout or protocol rules.`);S.flight.push({i,state:"lost"});$("explanation").innerHTML=`<strong>Packet ${i} was lost.</strong> The receiver cannot acknowledge a packet it never received. Watch for timeout and recovery.`;}
+ else{
+  if(protocol()==="gbn"&&i>S.delivered.size+1){addLog("🚫",`Packet ${i} discarded`,`Go-Back-N receiver expects packet ${S.delivered.size+1}; out-of-order packet ${i} is discarded.`);S.flight.push({i,state:"lost"});}
+  else{
+   S.delivered.add(i);if(protocol()==="sr"&&i>S.base){S.buffered.add(i);addLog("📦",`Packet ${i} buffered`,`Selective Repeat receiver stores packet ${i} while waiting for earlier packets.`);}
+   else addLog("📨",`Packet ${i} received`,`Receiver successfully received packet ${i}.`);
+   ackLost=Math.random()<aLoss;
+   if(ackLost){addLog("⚠️",`ACK ${i} lost`,`The packet arrived, but its acknowledgement was lost. The sender may retransmit after timeout.`);S.flight.push({i,state:"wait"});}
+   else {S.acked.add(i);addLog("✅",`ACK ${i} received`,`Sender received acknowledgement for packet ${i}.`);S.flight.push({i,state:"acked"});}
+  }
+ }
+ S.tick++;
+}
+function step(){
+ if(S.done)return;
+ const p=protocol(), win=p==="sw"?1:Math.max(1,+$("window").value), timeout=Math.max(1,+$("delay").value);
+ // Simplified discrete event model: one protocol event per step; losses are retried according to protocol.
+ if(p==="sw"){
+  let i=S.next;
+  if(i>S.n){finish();return}
+  if(S.attempts[i]===0){sendPacket(i,false);if(S.acked.has(i)){S.next++;}else S.waiting=i;}
+  else if(S.acked.has(i)){S.next++;if(S.next>S.n)finish();else addLog("➡️","Ready for next packet",`ACK received; sender can now send packet ${S.next}.`);}
+  else {sendPacket(i,true);if(S.acked.has(i))S.next++;}
+ }else if(p==="gbn"){
+  let base=S.base;
+  if(base>S.n){finish();return}
+  let outstanding=[];for(let i=base;i<Math.min(base+win,S.n+1);i++)if(!S.acked.has(i))outstanding.push(i);
+  if(outstanding.length===0){while(S.base<=S.n&&S.acked.has(S.base))S.base++;if(S.base>S.n){finish();return}outstanding=[S.base];}
+  // Send next not-yet-attempted packet in current window; if all attempted, go back to earliest unacked.
+  let candidate=outstanding.find(i=>S.attempts[i]===0);
+  if(candidate===undefined){candidate=outstanding[0];addLog("⏱️","Timeout","Go-Back-N retransmits from the oldest unacknowledged packet.");for(let i=candidate;i<Math.min(candidate+win,S.n+1);i++){if(!S.acked.has(i))sendPacket(i,true);}while(S.base<=S.n&&S.acked.has(S.base))S.base++;}
+  else {sendPacket(candidate,false);while(S.base<=S.n&&S.acked.has(S.base))S.base++;}
+ }else{
+  let unacked=[];for(let i=1;i<=S.n;i++)if(!S.acked.has(i))unacked.push(i);
+  if(unacked.length===0){finish();return}
+  let windowItems=unacked.filter(i=>i<S.base+win);
+  let candidate=windowItems.find(i=>S.attempts[i]===0);
+  if(candidate===undefined){candidate=windowItems[0]??unacked[0];addLog("⏱️","Selective timeout",`Only packet ${candidate} is retransmitted; other packets are not resent just because this one is missing.`);sendPacket(candidate,true);}
+  else sendPacket(candidate,false);
+  while(S.acked.has(S.base)&&S.base<=S.n)S.base++;
+  // Once the missing packet is delivered, buffered packets are now in order.
+  if(S.delivered.has(S.base))while(S.delivered.has(S.base)&&S.base<=S.n)S.base++;
+ }
+ if(S.acked.size>=S.n){finish();return}
+ if(S.tick>100){S.done=true;$("status").textContent="STOPPED";$("explanation").innerHTML="Simulation reached its safety limit. Reset and try with lower packet-loss settings."; }
+ render();
+}
+function finish(){S.done=true;if(timer){clearInterval(timer);timer=null;$("auto").textContent="Run simulation"}$("status").textContent="COMPLETE";$("explanation").innerHTML=`<strong>Simulation complete.</strong> ${S.acked.size} of ${S.n} packets have been acknowledged. Reset to try another loss pattern or protocol.`;addLog("🏁","Simulation complete",`${S.acked.size}/${S.n} packets acknowledged in ${S.tick} steps.`);render()}
+function render(){
+ $("windowValue").textContent=$("window").value;$("lossValue").textContent=$("loss").value+"%";$("ackLossValue").textContent=$("ackloss").value+"%";
+ $("delivered").textContent=`${S.acked.size}/${S.n}`;$("sent").textContent=S.sent;$("retrans").textContent=S.retrans;$("eff").textContent=S.sent?Math.round(S.acked.size/S.sent*100)+"%":"—";
+ $("senderSub").textContent=S.done?"Transmission complete":S.acked.size?`${S.acked.size} acknowledged`:"Ready to transmit";
+ $("receiverSub").textContent=`${S.delivered.size} received · ${S.buffered.size} buffered`;
+ $("status").textContent=S.done?"COMPLETE":S.tick?"RUNNING":"READY";
+ let html="";for(let i=1;i<=S.n;i++){let cls=S.acked.has(i)?"acked":S.everLost.has(i)&&!S.acked.has(i)?"lost":S.attempts[i]?"wait":"";let txt=S.acked.has(i)?"ACK ✓":S.attempts[i]?`P${i} · ×${S.attempts[i]}`:`Packet ${i}`;if(protocol()==="sr"&&S.buffered.has(i)&&!S.acked.has(i))cls="buffer";html+=`<div class="packet ${cls}">${txt}</div>`}
+ $("packetGrid").innerHTML=html;
+ $("log").innerHTML=S.log.map(e=>`<div class="event"><span class="time">T+${e.t}</span><span class="event-icon">${e.icon}</span><div><b>${esc(e.title)}</b><p>${esc(e.desc)}</p></div></div>`).join("")||"No events yet.";
+ let g=guides[protocol()];$("guide").innerHTML=`<strong>${g.name}</strong><br>${g.text}`;$("concept").textContent=g.concept;
+ $("step").disabled=S.done;$("auto").disabled=S.done;
+}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+$("step").addEventListener("click",step);
+$("auto").addEventListener("click",()=>{if(timer){clearInterval(timer);timer=null;$("auto").textContent="Run simulation";return}if(S.done)return;$("auto").textContent="Pause";timer=setInterval(step,750)});
+$("reset").addEventListener("click",init);
+function syncWindowLimit(){
+ let n=Math.max(3,Math.min(12,parseInt($("count").value)||8));
+ $("window").max=Math.min(6,n);
+ if(+$("window").value>+$("window").max)$("window").value=$("window").max;
+ $("windowValue").textContent=$("window").value;
+}
+$("count").addEventListener("input",()=>{syncWindowLimit();});
+$("count").addEventListener("change",()=>{syncWindowLimit();init();});
+["protocol","window","loss","ackloss","delay","showAck"].forEach(id=>$(id).addEventListener("change",()=>{
+ if(id==="window")$("windowValue").textContent=$("window").value;
+ if(id==="loss")$("lossValue").textContent=$("loss").value+"%";
+ if(id==="ackloss")$("ackLossValue").textContent=$("ackloss").value+"%";
+ if(id!=="showAck")init();else render();
+}));
+const questions=[
+ {q:"Which protocol retransmits only the missing or unacknowledged packet?",a:["Stop-and-Wait","Go-Back-N","Selective Repeat"],correct:2,why:"Selective Repeat tracks acknowledgements individually and retransmits only packets that need recovery."},
+ {q:"What does an ACK tell the sender?",a:["The receiver acknowledged a packet","The packet should be deleted from the network","The network has no congestion"],correct:0,why:"An acknowledgement confirms successful receipt (according to the protocol's rules)."},
+ {q:"What is the main drawback of Go-Back-N after a packet loss?",a:["It cannot use sequence numbers","It may retransmit later unacknowledged packets too","It never uses acknowledgements"],correct:1,why:"Go-Back-N goes back to the missing packet and resends subsequent unacknowledged packets in its window."}
+];let qi=0;
+function quiz(){let q=questions[qi%questions.length];$("quizQ").textContent=q.q;$("quizOptions").innerHTML=q.a.map((a,i)=>`<button class="quiz-option" data-i="${i}">${String.fromCharCode(65+i)}. ${a}</button>`).join("");$("quizFeedback").textContent="";document.querySelectorAll(".quiz-option").forEach(b=>b.addEventListener("click",()=>{let ok=+b.dataset.i===q.correct;$("quizFeedback").innerHTML=`<strong style="color:${ok?'#15803d':'#dc2626'}">${ok?'Correct!':'Not quite.'}</strong> ${q.why} <button class="btn secondary" id="nextQuiz" style="margin-left:6px;padding:6px 9px">Next question →</button>`;$("nextQuiz").addEventListener("click",()=>{qi++;quiz()})}))}
+quiz();syncWindowLimit();init();
+</script>
+</body>
+</html>
